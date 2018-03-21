@@ -5,9 +5,11 @@
  * @author Scott Andrews
  */
 
-'use strict'
+'use strict';
 
-var interceptor = require('../interceptor')
+var interceptor;
+
+interceptor = require('../interceptor');
 
 /**
  * Rejects the response promise based on the status code.
@@ -21,17 +23,14 @@ var interceptor = require('../interceptor')
  * @returns {Client}
  */
 module.exports = interceptor({
-
-  init: function (config) {
-    config.code = config.code || 400
-    return config
-  },
-
-  response: function (response, config) {
-    if (response.status && response.status.code >= config.code) {
-      return Promise.reject(response)
-    }
-    return response
-  }
-
-})
+	init: function (config) {
+		config.code = config.code || 400;
+		return config;
+	},
+	response: function (response, config) {
+		if (response.status && response.status.code >= config.code) {
+			return Promise.reject(response);
+		}
+		return response;
+	}
+});

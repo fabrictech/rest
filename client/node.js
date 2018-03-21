@@ -6,125 +6,129 @@
  * @author Scott Andrews
  */
 
-'use strict'
+'use strict';
 
-var parser = require('url')
-var http = require('http')
-var https = require('https')
-var mixin = require('../util/mixin')
-var normalizeHeaderName = require('../util/normalizeHeaderName')
-var responsePromise = require('../util/responsePromise')
-var client = require('../client')
+var parser, http, https, mixin, normalizeHeaderName, responsePromise, client, httpsExp;
 
-var httpsExp = /^https/i
+parser = require('url');
+http = require('http');
+https = require('https');
+mixin = require('../util/mixin');
+normalizeHeaderName = require('../util/normalizeHeaderName');
+responsePromise = require('../util/responsePromise');
+client = require('../client');
+
+httpsExp = /^https/i;
 
 // TODO remove once Node 0.6 is no longer supported
 Buffer.concat = Buffer.concat || function (list, length) {
-  // from https://github.com/joyent/node/blob/v0.8.21/lib/buffer.js
-  if (!Array.isArray(list)) {
-    throw new Error('Usage: Buffer.concat(list, [length])')
-  }
+	/*jshint plusplus:false, shadow:true */
+	// from https://github.com/joyent/node/blob/v0.8.21/lib/buffer.js
+	if (!Array.isArray(list)) {
+		throw new Error('Usage: Buffer.concat(list, [length])');
+	}
 
-  if (list.length === 0) {
-    return new Buffer(0)
-  } else if (list.length === 1) {
-    return list[0]
-  }
+	if (list.length === 0) {
+		return new Buffer(0);
+	} else if (list.length === 1) {
+		return list[0];
+	}
 
-  var i, buf
+	if (typeof length !== 'number') {
+		length = 0;
+		for (var i = 0; i < list.length; i++) {
+			var buf = list[i];
+			length += buf.length;
+		}
+	}
 
-  if (typeof length !== 'number') {
-    length = 0
-    for (i = 0; i < list.length; i++) {
-      buf = list[i]
-      length += buf.length
-    }
-  }
+	var buffer = new Buffer(length);
+	var pos = 0;
+	for (var i = 0; i < list.length; i++) {
+		var buf = list[i];
+		buf.copy(buffer, pos);
+		pos += buf.length;
+	}
+	return buffer;
+};
 
-  var buffer = new Buffer(length)
-  var pos = 0
-  for (i = 0; i < list.length; i++) {
-    buf = list[i]
-    buf.copy(buffer, pos)
-    pos += buf.length
-  }
-  return buffer
-}
+module.exports = client(function node(request) {
+	/*jshint maxcomplexity:20 */
+	return responsePromise.promise(function (resolve, reject) {
 
-module.exports = client(function node (request) {
-  return responsePromise.promise(function (resolve, reject) {
-    request = typeof request === 'string' ? { path: request } : request || {}
-    var response = { request: request }
+		var options, clientRequest, client, url, headers, entity, response;
 
-    if (request.canceled) {
-      response.error = 'precanceled'
-      reject(response)
-      return
-    }
+		request = typeof request === 'string' ? { path: request } : request || {};
+		response = { request: request };
 
-    var url = response.url = request.path || ''
-    var client = url.match(httpsExp) ? https : http
+		if (request.canceled) {
+			response.error = 'precanceled';
+			reject(response);
+			return;
+		}
 
-    var options = mixin({}, request.mixin, parser.parse(url))
+		url = response.url = request.path || '';
+		client = url.match(httpsExp) ? https : http;
 
-    var entity = request.entity
-    request.method = request.method || (entity ? 'POST' : 'GET')
-    options.method = request.method
-    var headers = options.headers = {}
-    Object.keys(request.headers || {}).forEach(function (name) {
-      headers[normalizeHeaderName(name)] = request.headers[name]
-    })
-    if (!headers['Content-Length']) {
-      headers['Content-Length'] = entity ? Buffer.byteLength(entity, 'utf8') : 0
-    }
+		options = mixin({}, request.mixin, parser.parse(url));
 
-    request.canceled = false
-    request.cancel = function cancel () {
-      request.canceled = true
-      response.error = 'canceled'
-      clientRequest.abort()
-      reject(response)
-    }
+		entity = request.entity;
+		request.method = request.method || (entity ? 'POST' : 'GET');
+		options.method = request.method;
+		headers = options.headers = {};
+		Object.keys(request.headers || {}).forEach(function (name) {
+			headers[normalizeHeaderName(name)] = request.headers[name];
+		});
+		if (!headers['Content-Length']) {
+			headers['Content-Length'] = entity ? Buffer.byteLength(entity, 'utf8') : 0;
+		}
 
-    var clientRequest = client.request(options, function (clientResponse) {
-      // Array of Buffers to collect response chunks
-      var buffers = []
+		request.canceled = false;
+		request.cancel = function cancel() {
+			request.canceled = true;
+			clientRequest.abort();
+		};
 
-      response.raw = {
-        request: clientRequest,
-        response: clientResponse
-      }
-      response.status = {
-        code: clientResponse.statusCode
-        // node doesn't provide access to the status text
-      }
-      response.headers = {}
-      Object.keys(clientResponse.headers).forEach(function (name) {
-        response.headers[normalizeHeaderName(name)] = clientResponse.headers[name]
-      })
+		clientRequest = client.request(options, function (clientResponse) {
+			// Array of Buffers to collect response chunks
+			var buffers = [];
 
-      clientResponse.on('data', function (data) {
-        // Collect the next Buffer chunk
-        buffers.push(data)
-      })
+			response.raw = {
+				request: clientRequest,
+				response: clientResponse
+			};
+			response.status = {
+				code: clientResponse.statusCode
+				// node doesn't provide access to the status text
+			};
+			response.headers = {};
+			Object.keys(clientResponse.headers).forEach(function (name) {
+				response.headers[normalizeHeaderName(name)] = clientResponse.headers[name];
+			});
 
-      clientResponse.on('end', function () {
-        // Create the final response entity
-        response.entity = buffers.length > 0 ? Buffer.concat(buffers).toString() : ''
-        buffers = null
+			clientResponse.on('data', function (data) {
+				// Collect the next Buffer chunk
+				buffers.push(data);
+			});
 
-        resolve(response)
-      })
-    })
+			clientResponse.on('end', function () {
+				// Create the final response entity
+				response.entity = buffers.length > 0 ? Buffer.concat(buffers).toString() : '';
+				buffers = null;
 
-    clientRequest.on('error', function (e) {
-      response.error = e
-      reject(response)
-    })
+				resolve(response);
+			});
+		});
 
-    if (entity) {
-      clientRequest.write(entity)
-    }
-    clientRequest.end()
-  }, request)
-})
+		clientRequest.on('error', function (e) {
+			response.error = e;
+			reject(response);
+		});
+
+		if (entity) {
+			clientRequest.write(entity);
+		}
+		clientRequest.end();
+
+	});
+});

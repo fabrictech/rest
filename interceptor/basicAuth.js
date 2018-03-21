@@ -5,10 +5,12 @@
  * @author Scott Andrews
  */
 
-'use strict'
+'use strict';
 
-var interceptor = require('../interceptor')
-var base64 = require('../util/base64')
+var interceptor, base64;
+
+interceptor = require('../interceptor');
+base64 = require('../util/base64');
 
 /**
  * Authenticates the request using HTTP Basic Authentication (rfc2617)
@@ -20,17 +22,17 @@ var base64 = require('../util/base64')
  * @returns {Client}
  */
 module.exports = interceptor({
+	request: function handleRequest(request, config) {
+		var headers, username, password;
 
-  request: function handleRequest (request, config) {
-    var headers = request.headers || (request.headers = {})
-    var username = request.username || config.username
-    var password = request.password || config.password || ''
+		headers = request.headers || (request.headers = {});
+		username = request.username || config.username;
+		password = request.password || config.password || '';
 
-    if (username) {
-      headers.Authorization = 'Basic ' + base64.encode(username + ':' + password)
-    }
+		if (username) {
+			headers.Authorization = 'Basic ' + base64.encode(username + ':' + password);
+		}
 
-    return request
-  }
-
-})
+		return request;
+	}
+});

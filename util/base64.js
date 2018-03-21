@@ -27,9 +27,11 @@
  * Linter refinement by Scott Andrews
  */
 
-'use strict'
+'use strict';
 
-var digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+/*jshint bitwise: false */
+
+var digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 /**
  * Base64-encodes a string of text.
@@ -37,47 +39,49 @@ var digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
  * @param {string} text The text to encode.
  * @return {string} The base64-encoded string.
  */
-function base64Encode (text) {
-  if (/([^\u0000-\u00ff])/.test(text)) {
-    throw new Error('Can\'t base64 encode non-ASCII characters.')
-  }
+function base64Encode(text) {
 
-  var i = 0
-  var cur, prev, byteNum
-  var result = []
+	if (/([^\u0000-\u00ff])/.test(text)) {
+		throw new Error('Can\'t base64 encode non-ASCII characters.');
+	}
 
-  while (i < text.length) {
-    cur = text.charCodeAt(i)
-    byteNum = i % 3
+	var i = 0,
+		cur, prev, byteNum,
+		result = [];
 
-    switch (byteNum) {
-      case 0: // first byte
-        result.push(digits.charAt(cur >> 2))
-        break
+	while (i < text.length) {
 
-      case 1: // second byte
-        result.push(digits.charAt((prev & 3) << 4 | (cur >> 4)))
-        break
+		cur = text.charCodeAt(i);
+		byteNum = i % 3;
 
-      case 2: // third byte
-        result.push(digits.charAt((prev & 0x0f) << 2 | (cur >> 6)))
-        result.push(digits.charAt(cur & 0x3f))
-        break
-    }
+		switch (byteNum) {
+		case 0: //first byte
+			result.push(digits.charAt(cur >> 2));
+			break;
 
-    prev = cur
-    i += 1
-  }
+		case 1: //second byte
+			result.push(digits.charAt((prev & 3) << 4 | (cur >> 4)));
+			break;
 
-  if (byteNum === 0) {
-    result.push(digits.charAt((prev & 3) << 4))
-    result.push('==')
-  } else if (byteNum === 1) {
-    result.push(digits.charAt((prev & 0x0f) << 2))
-    result.push('=')
-  }
+		case 2: //third byte
+			result.push(digits.charAt((prev & 0x0f) << 2 | (cur >> 6)));
+			result.push(digits.charAt(cur & 0x3f));
+			break;
+		}
 
-  return result.join('')
+		prev = cur;
+		i += 1;
+	}
+
+	if (byteNum === 0) {
+		result.push(digits.charAt((prev & 3) << 4));
+		result.push('==');
+	} else if (byteNum === 1) {
+		result.push(digits.charAt((prev & 0x0f) << 2));
+		result.push('=');
+	}
+
+	return result.join('');
 }
 
 /**
@@ -86,53 +90,57 @@ function base64Encode (text) {
  * @param {string} text The text to decode.
  * @return {string} The base64-decoded string.
  */
-function base64Decode (text) {
-  // ignore white space
-  text = text.replace(/\s/g, '')
+function base64Decode(text) {
 
-  // first check for any unexpected input
-  if (!(/^[a-z0-9\+\/\s]+={0,2}$/i.test(text)) || text.length % 4 > 0) {
-    throw new Error('Not a base64-encoded string.')
-  }
+	//ignore white space
+	text = text.replace(/\s/g, '');
 
-  // local variables
-  var cur, prev, digitNum
-  var i = 0
-  var result = []
+	//first check for any unexpected input
+	if (!(/^[a-z0-9\+\/\s]+\={0,2}$/i.test(text)) || text.length % 4 > 0) {
+		throw new Error('Not a base64-encoded string.');
+	}
 
-  // remove any equals signs
-  text = text.replace(/=/g, '')
+	//local variables
+	var cur, prev, digitNum,
+		i = 0,
+		result = [];
 
-  // loop over each character
-  while (i < text.length) {
-    cur = digits.indexOf(text.charAt(i))
-    digitNum = i % 4
+	//remove any equals signs
+	text = text.replace(/\=/g, '');
 
-    switch (digitNum) {
-      // case 0: first digit - do nothing, not enough info to work with
+	//loop over each character
+	while (i < text.length) {
 
-      case 1: // second digit
-        result.push(String.fromCharCode(prev << 2 | cur >> 4))
-        break
+		cur = digits.indexOf(text.charAt(i));
+		digitNum = i % 4;
 
-      case 2: // third digit
-        result.push(String.fromCharCode((prev & 0x0f) << 4 | cur >> 2))
-        break
+		switch (digitNum) {
 
-      case 3: // fourth digit
-        result.push(String.fromCharCode((prev & 3) << 6 | cur))
-        break
-    }
+		//case 0: first digit - do nothing, not enough info to work with
 
-    prev = cur
-    i += 1
-  }
+		case 1: //second digit
+			result.push(String.fromCharCode(prev << 2 | cur >> 4));
+			break;
 
-  // return a string
-  return result.join('')
+		case 2: //third digit
+			result.push(String.fromCharCode((prev & 0x0f) << 4 | cur >> 2));
+			break;
+
+		case 3: //fourth digit
+			result.push(String.fromCharCode((prev & 3) << 6 | cur));
+			break;
+		}
+
+		prev = cur;
+		i += 1;
+	}
+
+	//return a string
+	return result.join('');
+
 }
 
 module.exports = {
-  encode: base64Encode,
-  decode: base64Decode
-}
+	encode: base64Encode,
+	decode: base64Decode
+};

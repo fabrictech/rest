@@ -5,39 +5,44 @@
  * @author Scott Andrews
  */
 
-/* eslint-env amd */
-
 (function (buster, define) {
-  'use strict'
+	'use strict';
 
-  var assert = buster.assertions.assert
+	var assert, refute;
 
-  define('rest-test/version-test', function (require) {
-    var bowerJson = require('rest/bower.json')
-    var packageJson = require('rest/package.json')
+	assert = buster.assertions.assert;
+	refute = buster.assertions.refute;
 
-    buster.testCase('rest/version', {
-      'should have the same name for package.json and bower.json': function () {
-        assert.same(bowerJson.name, packageJson.name)
-      },
-      'should have the same version for package.json and bower.json': function () {
-        assert.same(bowerJson.version, packageJson.version)
-      },
-      'should have the same depenencies for package.json and bpwer.json': function () {
-        // this may not always hold true, but it currently does
-        assert.equals(bowerJson.dependencies, packageJson.dependencies)
-      }
-    })
-  })
+	define('rest-test/version-test', function (require) {
+
+		var bowerJson, packageJson;
+
+		bowerJson = require('rest/bower.json');
+		packageJson = require('rest/package.json');
+
+		buster.testCase('rest/version', {
+			'should have the same name for package.json and bower.json': function () {
+				assert.same(bowerJson.name, packageJson.name);
+			},
+			'should have the same version for package.json and bower.json': function () {
+				assert.same(bowerJson.version, packageJson.version);
+			},
+			'should have the same depenencies for package.json and bpwer.json': function () {
+				// this may not always hold true, but it currently does
+				assert.equals(bowerJson.dependencies, packageJson.dependencies);
+			}
+		});
+
+	});
+
 }(
-  this.buster || require('buster'),
-  typeof define === 'function' && define.amd ? define : function (id, factory) {
-    var packageName = id.split(/[\/\-]/)[0]
-    var pathToRoot = id.replace(/[^\/]+/g, '..')
-    pathToRoot = pathToRoot.length > 2 ? pathToRoot.substr(3) : pathToRoot
-    factory(function (moduleId) {
-      return require(moduleId.indexOf(packageName) === 0 ? pathToRoot + moduleId.substr(packageName.length) : moduleId)
-    })
-  }
-  // Boilerplate for AMD and Node
-))
+	this.buster || require('buster'),
+	typeof define === 'function' && define.amd ? define : function (id, factory) {
+		var packageName = id.split(/[\/\-]/)[0], pathToRoot = id.replace(/[^\/]+/g, '..');
+		pathToRoot = pathToRoot.length > 2 ? pathToRoot.substr(3) : pathToRoot;
+		factory(function (moduleId) {
+			return require(moduleId.indexOf(packageName) === 0 ? pathToRoot + moduleId.substr(packageName.length) : moduleId);
+		});
+	}
+	// Boilerplate for AMD and Node
+));
