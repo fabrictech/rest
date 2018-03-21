@@ -5,23 +5,21 @@
  * @author Scott Andrews
  */
 
-'use strict';
+'use strict'
 
-var pathPrefix, template, find, lazyPromise, responsePromise;
+var pathPrefix = require('../../../interceptor/pathPrefix')
+var template = require('../../../interceptor/template')
+var find = require('../../../util/find')
+var lazyPromise = require('../../../util/lazyPromise')
+var responsePromise = require('../../../util/responsePromise')
 
-pathPrefix = require('../../../interceptor/pathPrefix');
-template = require('../../../interceptor/template');
-find = require('../../../util/find');
-lazyPromise = require('../../../util/lazyPromise');
-responsePromise = require('../../../util/responsePromise');
-
-function defineProperty(obj, name, value) {
-	Object.defineProperty(obj, name, {
-		value: value,
-		configurable: true,
-		enumerable: false,
-		writeable: true
-	});
+function defineProperty (obj, name, value) {
+  Object.defineProperty(obj, name, {
+    value: value,
+    configurable: true,
+    enumerable: false,
+    writeable: true
+  })
 }
 
 /**
@@ -52,77 +50,75 @@ function defineProperty(obj, name, value) {
  */
 module.exports = {
 
-	read: function (str, opts) {
-		var client, console;
+  read: function (str, opts) {
+    opts = opts || {}
+    var client = opts.client
+    var console = opts.console || console
 
-		opts = opts || {};
-		client = opts.client;
-		console = opts.console || console;
+    function deprecationWarning (relationship, deprecation) {
+      if (deprecation && console && console.warn || console.log) {
+        (console.warn || console.log).call(console, 'Relationship \'' + relationship + '\' is deprecated, see ' + deprecation)
+      }
+    }
 
-		function deprecationWarning(relationship, deprecation) {
-			if (deprecation && console && console.warn || console.log) {
-				(console.warn || console.log).call(console, 'Relationship \'' + relationship + '\' is deprecated, see ' + deprecation);
-			}
-		}
+    return opts.registry.lookup(opts.mime.suffix).then(function (converter) {
+      return converter.read(str, opts)
+    }).then(function (root) {
+      find.findProperties(root, '_embedded', function (embedded, resource, name) {
+        Object.keys(embedded).forEach(function (relationship) {
+          if (relationship in resource) { return }
+          var related = responsePromise({
+            entity: embedded[relationship]
+          })
+          defineProperty(resource, relationship, related)
+        })
+        defineProperty(resource, name, embedded)
+      })
+      find.findProperties(root, '_links', function (links, resource, name) {
+        Object.keys(links).forEach(function (relationship) {
+          var link = links[relationship]
+          if (relationship in resource) { return }
+          var request = { path: link.href }
+          defineProperty(resource, relationship, responsePromise.make(lazyPromise(function () {
+            if (link.deprecation) { deprecationWarning(relationship, link.deprecation) }
+            if (link.templated === true) {
+              return template(client)(request)
+            }
+            return client(request)
+          }), request))
+        })
+        defineProperty(resource, name, links)
+        defineProperty(resource, 'clientFor', function (relationship, clientOverride) {
+          var link = links[relationship]
+          if (!link) {
+            throw new Error('Unknown relationship: ' + relationship)
+          }
+          if (link.deprecation) { deprecationWarning(relationship, link.deprecation) }
+          if (link.templated === true) {
+            return template(
+              clientOverride || client,
+              { template: link.href }
+            )
+          }
+          return pathPrefix(
+            clientOverride || client,
+            { prefix: link.href }
+          )
+        })
+        defineProperty(resource, 'requestFor', function (relationship, request, clientOverride) {
+          var client = this.clientFor(relationship, clientOverride)
+          return client(request)
+        })
+      })
 
-		return opts.registry.lookup(opts.mime.suffix).then(function (converter) {
-			return converter.read(str, opts);
-		}).then(function (root) {
-			find.findProperties(root, '_embedded', function (embedded, resource, name) {
-				Object.keys(embedded).forEach(function (relationship) {
-					if (relationship in resource) { return; }
-					var related = responsePromise({
-						entity: embedded[relationship]
-					});
-					defineProperty(resource, relationship, related);
-				});
-				defineProperty(resource, name, embedded);
-			});
-			find.findProperties(root, '_links', function (links, resource, name) {
-				Object.keys(links).forEach(function (relationship) {
-					var link = links[relationship];
-					if (relationship in resource) { return; }
-					defineProperty(resource, relationship, responsePromise.make(lazyPromise(function () {
-						if (link.deprecation) { deprecationWarning(relationship, link.deprecation); }
-						if (link.templated === true) {
-							return template(client)({ path: link.href });
-						}
-						return client({ path: link.href });
-					})));
-				});
-				defineProperty(resource, name, links);
-				defineProperty(resource, 'clientFor', function (relationship, clientOverride) {
-					var link = links[relationship];
-					if (!link) {
-						throw new Error('Unknown relationship: ' + relationship);
-					}
-					if (link.deprecation) { deprecationWarning(relationship, link.deprecation); }
-					if (link.templated === true) {
-						return template(
-							clientOverride || client,
-							{ template: link.href }
-						);
-					}
-					return pathPrefix(
-						clientOverride || client,
-						{ prefix: link.href }
-					);
-				});
-				defineProperty(resource, 'requestFor', function (relationship, request, clientOverride) {
-					var client = this.clientFor(relationship, clientOverride);
-					return client(request);
-				});
-			});
+      return root
+    })
+  },
 
-			return root;
-		});
+  write: function (obj, opts) {
+    return opts.registry.lookup(opts.mime.suffix).then(function (converter) {
+      return converter.write(obj, opts)
+    })
+  }
 
-	},
-
-	write: function (obj, opts) {
-		return opts.registry.lookup(opts.mime.suffix).then(function (converter) {
-			return converter.write(obj, opts);
-		});
-	}
-
-};
+}

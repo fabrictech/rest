@@ -5,7 +5,7 @@
  * @author Scott Andrews
  */
 
-'use strict';
+'use strict'
 
 /**
  * Create a new JSON converter with custom reviver/replacer.
@@ -18,20 +18,20 @@
  * @param {function} [reviver=undefined] custom JSON.parse reviver
  * @param {function|Array} [replacer=undefined] custom JSON.stringify replacer
  */
-function createConverter(reviver, replacer) {
-	return {
+function createConverter (reviver, replacer) {
+  return {
 
-		read: function (str) {
-			return JSON.parse(str, reviver);
-		},
+    read: function (str) {
+      return JSON.parse(str, reviver)
+    },
 
-		write: function (obj) {
-			return JSON.stringify(obj, replacer);
-		},
+    write: function (obj) {
+      return JSON.stringify(obj, replacer)
+    },
 
-		extend: createConverter
+    extend: createConverter
 
-	};
+  }
 }
 
-module.exports = createConverter();
+module.exports = createConverter()

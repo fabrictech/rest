@@ -5,12 +5,10 @@
  * @author Scott Andrews
  */
 
-'use strict';
+'use strict'
 
-var interceptor, UrlBuilder;
-
-interceptor = require('../interceptor');
-UrlBuilder = require('../UrlBuilder');
+var interceptor = require('../interceptor')
+var UrlBuilder = require('../UrlBuilder')
 
 /**
  * Applies request params to the path by token replacement
@@ -29,19 +27,20 @@ UrlBuilder = require('../UrlBuilder');
  * @returns {Client}
  */
 module.exports = interceptor({
-	init: function (config) {
-		config.params = config.params || {};
-		return config;
-	},
-	request: function (request, config) {
-		var path, params;
 
-		path = request.path || '';
-		params = request.params || {};
+  init: function (config) {
+    config.params = config.params || {}
+    return config
+  },
 
-		request.path = new UrlBuilder(path, config.params).append('', params).build();
-		delete request.params;
+  request: function (request, config) {
+    var path = request.path || ''
+    var params = request.params || {}
 
-		return request;
-	}
-});
+    request.path = new UrlBuilder(path, config.params).append('', params).build()
+    delete request.params
+
+    return request
+  }
+
+})
