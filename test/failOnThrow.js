@@ -6,19 +6,23 @@
  */
 
 (function (buster) {
-  'use strict'
+	'use strict';
 
-  var fail = buster.assertions.fail
+	var fail;
 
-  buster.assertions.failOnThrow = function failOnThrow (func) {
-    return function () {
-      try {
-        return func.apply(this, arguments)
-      } catch (e) {
-        fail(e)
-      }
-    }
-  }
+	fail = buster.assertions.fail;
+
+	buster.assertions.failOnThrow = function failOnThrow(func) {
+		return function () {
+			try {
+				return func.apply(this, arguments);
+			}
+			catch (e) {
+				fail(e);
+			}
+		};
+	};
+
 }(
-  this.buster || require('buster')
-))
+	this.buster || require('buster')
+));

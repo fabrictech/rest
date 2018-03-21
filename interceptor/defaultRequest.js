@@ -5,40 +5,45 @@
  * @author Scott Andrews
  */
 
-'use strict'
+'use strict';
 
-var interceptor = require('../interceptor')
-var mixinUtil = require('../util/mixin')
+var interceptor, mixinUtil, defaulter;
 
-var defaulter = (function () {
-  function mixin (prop, target, defaults) {
-    if (prop in target || prop in defaults) {
-      target[prop] = mixinUtil({}, defaults[prop], target[prop])
-    }
-  }
+interceptor = require('../interceptor');
+mixinUtil = require('../util/mixin');
 
-  function copy (prop, target, defaults) {
-    if (prop in defaults && !(prop in target)) {
-      target[prop] = defaults[prop]
-    }
-  }
+defaulter = (function () {
 
-  var mappings = {
-    method: copy,
-    path: copy,
-    params: mixin,
-    headers: mixin,
-    entity: copy,
-    mixin: mixin
-  }
+	function mixin(prop, target, defaults) {
+		if (prop in target || prop in defaults) {
+			target[prop] = mixinUtil({}, defaults[prop], target[prop]);
+		}
+	}
 
-  return function (target, defaults) {
-    for (var prop in mappings) {
-      mappings[prop](prop, target, defaults)
-    }
-    return target
-  }
-}())
+	function copy(prop, target, defaults) {
+		if (prop in defaults && !(prop in target)) {
+			target[prop] = defaults[prop];
+		}
+	}
+
+	var mappings = {
+		method: copy,
+		path: copy,
+		params: mixin,
+		headers: mixin,
+		entity: copy,
+		mixin: mixin
+	};
+
+	return function (target, defaults) {
+		for (var prop in mappings) {
+			/*jshint forin: false */
+			mappings[prop](prop, target, defaults);
+		}
+		return target;
+	};
+
+}());
 
 /**
  * Provide default values for a request. These values will be applied to the
@@ -58,9 +63,7 @@ var defaulter = (function () {
  * @returns {Client}
  */
 module.exports = interceptor({
-
-  request: function handleRequest (request, config) {
-    return defaulter(request, config)
-  }
-
-})
+	request: function handleRequest(request, config) {
+		return defaulter(request, config);
+	}
+});

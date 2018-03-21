@@ -5,12 +5,14 @@
  * @author Scott Andrews
  */
 
-'use strict'
+'use strict';
 
-var interceptor = require('../interceptor')
+var interceptor;
+
+interceptor = require('../interceptor');
 
 if (typeof console !== 'undefined') {
-  console.log('rest.js: rest/interceptor/entity is deprecated, please use response.entity() instead')
+	console.log('rest.js: rest/interceptor/entity is deprecated, please use response.entity() instead');
 }
 
 /**
@@ -24,12 +26,10 @@ if (typeof console !== 'undefined') {
  * @returns {Client}
  */
 module.exports = interceptor({
-
-  response: function (response) {
-    if ('entity' in response) {
-      return response.entity
-    }
-    return response
-  }
-
-})
+	response: function (response) {
+		if ('entity' in response) {
+			return response.entity;
+		}
+		return response;
+	}
+});

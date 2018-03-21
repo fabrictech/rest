@@ -5,39 +5,43 @@
  * @author Scott Andrews
  */
 
-/* eslint-env amd */
-
 (function (buster, define) {
-  'use strict'
+	'use strict';
 
-  var assert = buster.assertions.assert
+	var assert, refute;
 
-  define('rest-test/util/find-test', function (require) {
-    var find = require('rest/util/find')
+	assert = buster.assertions.assert;
+	refute = buster.assertions.refute;
 
-    buster.testCase('rest/util/find', {
-      'should find objects that contain a given property name': function () {
-        var graph = { foo: { foo: {}, bar: { bar: { foo: {} } } } }
-        var spy = this.spy()
+	define('rest-test/util/find-test', function (require) {
 
-        find.findProperties(graph, 'foo', spy)
+		var find = require('rest/util/find');
 
-        assert.same(3, spy.callCount)
-        assert.calledWith(spy, graph.foo, graph, 'foo')
-        assert.calledWith(spy, graph.foo.foo, graph.foo, 'foo')
-        assert.calledWith(spy, graph.foo.bar.bar.foo, graph.foo.bar.bar, 'foo')
-      }
-    })
-  })
+		buster.testCase('rest/util/find', {
+			'should find objects that contain a given property name': function () {
+				var graph, spy;
+
+				graph = { foo: { foo: {}, bar: { bar: { foo: {} } } } };
+				spy = this.spy();
+
+				find.findProperties(graph, 'foo', spy);
+
+				assert.same(3, spy.callCount);
+				assert.calledWith(spy, graph.foo, graph, 'foo');
+				assert.calledWith(spy, graph.foo.foo, graph.foo, 'foo');
+				assert.calledWith(spy, graph.foo.bar.bar.foo, graph.foo.bar.bar, 'foo');
+			}
+		});
+	});
+
 }(
-  this.buster || require('buster'),
-  typeof define === 'function' && define.amd ? define : function (id, factory) {
-    var packageName = id.split(/[\/\-]/)[0]
-    var pathToRoot = id.replace(/[^\/]+/g, '..')
-    pathToRoot = pathToRoot.length > 2 ? pathToRoot.substr(3) : pathToRoot
-    factory(function (moduleId) {
-      return require(moduleId.indexOf(packageName) === 0 ? pathToRoot + moduleId.substr(packageName.length) : moduleId)
-    })
-  }
-  // Boilerplate for AMD and Node
-))
+	this.buster || require('buster'),
+	typeof define === 'function' && define.amd ? define : function (id, factory) {
+		var packageName = id.split(/[\/\-]/)[0], pathToRoot = id.replace(/[^\/]+/g, '..');
+		pathToRoot = pathToRoot.length > 2 ? pathToRoot.substr(3) : pathToRoot;
+		factory(function (moduleId) {
+			return require(moduleId.indexOf(packageName) === 0 ? pathToRoot + moduleId.substr(packageName.length) : moduleId);
+		});
+	}
+	// Boilerplate for AMD and Node
+));

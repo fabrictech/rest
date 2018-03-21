@@ -5,13 +5,15 @@
  * @author Scott Andrews
  */
 
-'use strict'
+'use strict';
 
-var interceptor = require('../interceptor')
+var interceptor;
 
-function isRedirect (response, config) {
-  var matchesRedirectCode = config.code === 0 || (response.status && response.status.code >= config.code)
-  return response.headers && response.headers.Location && matchesRedirectCode
+interceptor = require('../interceptor');
+
+function isRedirect(response, config) {
+	var matchesRedirectCode = config.code === 0 || (response.status && response.status.code >= config.code);
+	return response.headers && response.headers.Location && matchesRedirectCode;
 }
 
 /**
@@ -27,26 +29,23 @@ function isRedirect (response, config) {
  * @returns {Client}
  */
 module.exports = interceptor({
+	init: function (config) {
+		config.code = config.code || 0;
+		return config;
+	},
+	success: function (response, config, client) {
+		var request;
 
-  init: function (config) {
-    config.code = config.code || 0
-    return config
-  },
+		if (isRedirect(response, config)) {
+			request = response.request || {};
+			client = (config.client || request.originator || client.skip());
 
-  success: function (response, config, client) {
-    var request
+			return client({
+				method: 'GET',
+				path: response.headers.Location
+			});
+		}
 
-    if (isRedirect(response, config)) {
-      request = response.request || {}
-      client = (config.client || request.originator || client.skip())
-
-      return client({
-        method: 'GET',
-        path: response.headers.Location
-      })
-    }
-
-    return response
-  }
-
-})
+		return response;
+	}
+});

@@ -1,6 +1,0 @@
-{
-    "rules": {
-      "no-throw-literal": [0]
-    },
-    "extends": "standard"
-}
